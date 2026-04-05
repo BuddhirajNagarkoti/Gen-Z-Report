@@ -43,6 +43,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _currentPageIndex = widget.initialPage - 1;
     _pageController = PageController(initialPage: _currentPageIndex);
     _initData();
+    
+    // Sync reader with audio manager to follow the voice
+    _audioManager.addListener(_syncWithAudio);
+  }
+
+  void _syncWithAudio() {
+    if (_audioManager.isPlaying && mounted) {
+      final audioPage = _audioManager.currentPage;
+      final audioPageIndex = audioPage - 1;
+      
+      if (_currentPageIndex != audioPageIndex) {
+        _pageController.animateToPage(
+          audioPageIndex,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    }
   }
 
   Future<void> _initData() async {
@@ -62,9 +80,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
     context.push('/audio?id=pg_$pageNum&title=पृष्ठ $pageNum वाचन');
   }
 
+  void _showAudioWarning() {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.lock_outline, color: Colors.white, size: 20),
+            SizedBox(width: 12),
+            Expanded(child: Text('अडियो बजिरहेको छ। कृपया अगाडि बढ्न पहिले अडियो रोक्नुहोस्।')),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.redAccent.withOpacity(0.9),
+      ),
+    );
+  }
+
 
   @override
   void dispose() {
+    _audioManager.removeListener(_syncWithAudio);
     _pageController.dispose();
     super.dispose();
   }
@@ -136,25 +173,43 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     final isAtTop = pos == null || pos.extentBefore == 0;
                     
                     if (pointerSignal.scrollDelta.dy > 10 && isAtBottom) {
+                      if (_audioManager.isPlaying) {
+                        _showAudioWarning();
+                        return;
+                      }
                       _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                     } else if (pointerSignal.scrollDelta.dy < -10 && isAtTop) {
+                      if (_audioManager.isPlaying) {
+                        _showAudioWarning();
+                        return;
+                      }
                       _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                     }
                   }
                 },
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _repo.totalPages,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPageIndex = index;
-                    });
-                    _innerScrollController.jumpTo(0);
-                    _loadSyncDataForCurrentPage();
+                child: GestureDetector(
+                  onHorizontalDragEnd: (details) {
+                    if (_audioManager.isPlaying) {
+                      _showAudioWarning();
+                    }
                   },
-                  itemBuilder: (context, index) {
-                    return _buildPage(context, index + 1);
-                  },
+                  child: PageView.builder(
+                    controller: _pageController,
+                    physics: _audioManager.isPlaying 
+                        ? const NeverScrollableScrollPhysics() 
+                        : const BouncingScrollPhysics(),
+                    itemCount: _repo.totalPages,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPageIndex = index;
+                      });
+                      _innerScrollController.jumpTo(0);
+                      _loadSyncDataForCurrentPage();
+                    },
+                    itemBuilder: (context, index) {
+                      return _buildPage(context, index + 1);
+                    },
+                  ),
                 ),
               ),
               _buildNavigationOverlay(context),
@@ -179,8 +234,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
       child: SingleChildScrollView(
         controller: pageNum == _currentPageIndex + 1 ? _innerScrollController : null,
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 40.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -285,8 +343,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   List<Widget> _buildCitableContent(BuildContext context, String content) {
     // This is now replaced by CitableTextView
@@ -296,53 +356,54 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Widget _buildNavigationOverlay(BuildContext context) {
     return Positioned(
       bottom: 24,
-      left: 24,
-      right: 24,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () => _showJumpToPageDialog(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '${_currentPageIndex + 1} / ${_repo.totalPages}',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        Icons.edit_outlined,
-                        size: 11,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                      GestureDetector(
+                        onTap: () => _showJumpToPageDialog(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${_currentPageIndex + 1} / ${_repo.totalPages}',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1),
+                              ),
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 11,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox.shrink(),
-            ],
+                ],
+            ),
           ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: (_currentPageIndex + 1) / _repo.totalPages,
-            backgroundColor: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
-            minHeight: 2,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -564,10 +625,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
           decoration: InputDecoration(
             hintText: '1 – ${_repo.totalPages}',
             hintStyle: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+              color: theme.colorScheme.onSurface.withOpacity(0.35),
             ),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+              borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.3)),
             ),
             focusedBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: theme.colorScheme.primary),

@@ -11,14 +11,16 @@ class AudioManager extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
   final AudioDownloadService _downloadService = GetIt.I<AudioDownloadService>();
   
+  int _currentPage = 1;
   bool _isPlaying = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
-  int _currentPage = 1;
   bool _isLoading = false;
+  String _statusMessage = '';
   double _downloadProgress = 0;
   bool _isPrefetching = false;
-
+  double _playbackSpeed = 1.0;
+  
   AudioManager() {
     _init();
   }
@@ -56,15 +58,23 @@ class AudioManager extends ChangeNotifier {
     });
   }
 
-  void _playNextPage() {
-    // Arbitrary limit 898 (approx total pages in report)
-    if (_currentPage < 898) {
-      playPage(_currentPage + 1);
+  void _playNextPage() async {
+    int nextPg = _currentPage;
+    if (_currentPage < 35) {
+      nextPg = _currentPage + 1;
+    } else if (_currentPage == 35) {
+      nextPg = 648;
+    } else if (_currentPage >= 648 && _currentPage < 711) {
+      nextPg = _currentPage + 1;
     } else {
+      // END OF PLAYLIST
       _isPlaying = false;
       _position = Duration.zero;
+      _duration = Duration.zero;
       notifyListeners();
+      return;
     }
+    await playPage(nextPg);
   }
 
   bool get isPlaying => _isPlaying;
@@ -72,21 +82,45 @@ class AudioManager extends ChangeNotifier {
   Duration get duration => _duration;
   int get currentPage => _currentPage;
   bool get isLoading => _isLoading;
+  String get statusMessage => _statusMessage;
   double get downloadProgress => _downloadProgress;
   bool get isActive => _isPlaying || _position > Duration.zero;
+  double get playbackSpeed => _playbackSpeed;
+
+  void setPlaybackSpeed(double speed) async {
+    _playbackSpeed = speed;
+    await _player.setPlaybackRate(speed);
+    notifyListeners();
+  }
+
+  Future<void> deletePageAudio(int pageNum) async {
+    await _downloadService.deletePage(pageNum);
+    notifyListeners(); // Refresh UI if needed
+  }
+
+  Future<bool> checkIsDownloaded(int pageNum) {
+    return _downloadService.isDownloaded(pageNum);
+  }
 
   Future<void> playPage(int pageNum) async {
     if (_currentPage == pageNum && _isPlaying) return;
     
     _currentPage = pageNum;
     _isLoading = true;
+    _position = Duration.zero;
+    _duration = Duration.zero;
+    _statusMessage = 'पृष्ठ $pageNum लोड हुँदैछ...';
     notifyListeners();
 
     try {
+      _statusMessage = 'अडियो प्लेयर रोक्दैछ...';
+      notifyListeners();
       await _player.stop();
 
       // On Web, we stream directly from URL because path_provider/local files aren't supported
       if (kIsWeb) {
+        _statusMessage = 'क्लाउडबाट फेच गर्दैछ (Web)...';
+        notifyListeners();
         final fileName = 'pg_${pageNum.toString().padLeft(3, '0')}.mp3';
         final storageRef = FirebaseStorage.instance.ref().child('voices/$fileName');
         final url = await storageRef.getDownloadURL();
@@ -94,26 +128,41 @@ class AudioManager extends ChangeNotifier {
         debugPrint('AudioManager: Streaming from Firebase for Page $pageNum (Web)');
       } else {
         // Mobile/Desktop: Try local cache first
+        _statusMessage = 'स्थानीय फाइल चेक गर्दैछ...';
+        notifyListeners();
         final isDownloaded = await _downloadService.isDownloaded(pageNum);
         if (isDownloaded) {
+          _statusMessage = 'स्थानीय फाइलबाट बजाउँदै...';
+          notifyListeners();
           final localPath = await _downloadService.getLocalPath(pageNum);
           await _player.setSource(DeviceFileSource(localPath));
           debugPrint('AudioManager: Playing local file for Page $pageNum');
         } else {
+          _statusMessage = 'क्लाउडबाट फेच गर्दैछ...';
+          notifyListeners();
           final fileName = 'pg_${pageNum.toString().padLeft(3, '0')}.mp3';
           final storageRef = FirebaseStorage.instance.ref().child('voices/$fileName');
           final url = await storageRef.getDownloadURL();
+          _statusMessage = 'फेच गरियो, बफर गर्दैछ...';
+          notifyListeners();
           await _player.setSource(UrlSource(url));
           debugPrint('AudioManager: Streaming from Firebase for Page $pageNum');
         }
       }
 
+      _statusMessage = 'सुरु गर्दैछ...';
+      notifyListeners();
       await _player.resume();
       _isPlaying = true;
+      _isLoading = false;
+      _statusMessage = '';
     } catch (e) {
       debugPrint('AudioManager: FAILED to play audio for Page $pageNum - $e');
       _isPlaying = false;
+      _isLoading = false;
+      _statusMessage = 'अडियो लोड गर्न असफल भयो';
     } finally {
+      // Small safety check
       _isLoading = false;
       notifyListeners();
     }
@@ -150,6 +199,10 @@ class AudioManager extends ChangeNotifier {
 
   Future<void> stop() async {
     await _player.stop();
+    _isPlaying = false;
+    _position = Duration.zero;
+    _duration = Duration.zero;
+    _isLoading = false;
     notifyListeners();
   }
 

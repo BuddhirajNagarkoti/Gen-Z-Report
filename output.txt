@@ -1,0 +1,70 @@
+Analyzing GEN Z REPORT LLM...                                   
+
+   info - The import of 'package:flutter/material.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart' - lib\core\services\audio_manager.dart:3:8 - unnecessary_import
+warning - Unused import: 'sync_data_service.dart' - lib\core\services\audio_manager.dart:6:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:160:78 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:176:81 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:178:81 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:203:82 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:211:75 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:212:75 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:213:75 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:225:84 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:237:88 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:247:90 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:277:67 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:303:81 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:327:76 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:335:76 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:400:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\audio_player_screen.dart:455:110 - deprecated_member_use
+warning - The value of the field '_langService' isn't used - lib\features\reader\presentation\pages\preface_screen.dart:20:25 - unused_field
+   info - Don't invoke 'print' in production code - lib\features\reader\presentation\pages\preface_screen.dart:58:7 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\preface_screen.dart:128:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\preface_screen.dart:130:75 - deprecated_member_use
+warning - Unused import: '../../../../data/models/chapter.dart' - lib\features\reader\presentation\pages\reader_screen.dart:3:8 - unused_import
+warning - Unused import: '../widgets/audio_control_bar.dart' - lib\features\reader\presentation\pages\reader_screen.dart:16:8 - unused_import
+warning - The value of the field '_syncService' isn't used - lib\features\reader\presentation\pages\reader_screen.dart:31:25 - unused_field
+warning - The value of the field '_langService' isn't used - lib\features\reader\presentation\pages\reader_screen.dart:34:25 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:142:61 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:210:56 - deprecated_member_use
+   info - Unnecessary braces in a string interpolation - lib\features\reader\presentation\pages\reader_screen.dart:247:98 - unnecessary_brace_in_string_interps
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:249:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:261:54 - deprecated_member_use
+warning - The declaration '_buildCitableContent' isn't referenced - lib\features\reader\presentation\pages\reader_screen.dart:310:16 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:360:68 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:391:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:428:100 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:446:85 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:515:74 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\reader_screen.dart:523:52 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\features\reader\presentation\pages\reader_screen.dart:549:25 - deprecated_member_use
+warning - The value of the field '_langService' isn't used - lib\features\reader\presentation\pages\toc_screen.dart:17:25 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\toc_screen.dart:167:84 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\toc_screen.dart:174:72 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\toc_screen.dart:199:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\pages\toc_screen.dart:201:77 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\audio_control_bar.dart:27:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\audio_control_bar.dart:32:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\audio_control_bar.dart:43:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\audio_control_bar.dart:55:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\audio_control_bar.dart:90:70 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\audio_control_bar.dart:98:94 - deprecated_member_use
+warning - The declaration '_formatDuration' isn't referenced - lib\features\reader\presentation\widgets\audio_control_bar.dart:113:10 - unused_element
+warning - The value of the local variable 'theme' isn't used - lib\features\reader\presentation\widgets\citable_text_view.dart:21:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\citable_text_view.dart:62:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\citable_text_view.dart:63:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\citable_text_view.dart:79:93 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\citable_text_view.dart:132:61 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\citable_text_view.dart:140:89 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\mini_audio_player.dart:26:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\mini_audio_player.dart:30:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\mini_audio_player.dart:42:66 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\reader\presentation\widgets\mini_audio_player.dart:75:69 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\main.dart:37:5 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:173:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:191:65 - deprecated_member_use
+   info - Don't invoke 'print' in production code - tool\process_data.dart:7:5 - avoid_print
+   info - Don't invoke 'print' in production code - tool\process_data.dart:43:5 - avoid_print
+   info - Don't invoke 'print' in production code - tool\process_data.dart:93:3 - avoid_print
+
