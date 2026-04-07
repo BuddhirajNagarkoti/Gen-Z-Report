@@ -97,6 +97,18 @@ class MiniAudioPlayer extends StatelessWidget {
                       ),
                     ),
                     IconButton(
+                      onPressed: () => _showSpeedMenu(context, audioManager),
+                      icon: Text(
+                        '${audioManager.playbackSpeed.toStringAsFixed(1)}x',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      tooltip: 'गति चयन गर्नुहोस्',
+                    ),
+                    IconButton(
                       onPressed: () => audioManager.stop(),
                       icon: const Icon(Icons.close, size: 20),
                     ),
@@ -107,6 +119,40 @@ class MiniAudioPlayer extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showSpeedMenu(BuildContext context, AudioManager audioManager) {
+    final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+    
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'प्लेब्याक गति',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Divider(height: 1),
+            ...speeds.map((speed) => ListTile(
+              title: Text('${speed}x', textAlign: TextAlign.center),
+              selected: audioManager.playbackSpeed == speed,
+              onTap: () {
+                audioManager.setPlaybackSpeed(speed);
+                Navigator.pop(context);
+              },
+            )),
+          ],
+        ),
+      ),
     );
   }
 }

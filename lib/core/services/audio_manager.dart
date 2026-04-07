@@ -197,6 +197,7 @@ class AudioManager extends ChangeNotifier {
 
       _statusMessage = 'सुरु गर्दैछ...';
       notifyListeners();
+      await _player.setPlaybackRate(_playbackSpeed);
       await _player.resume();
       _isPlaying = true;
       _isLoading = false;
