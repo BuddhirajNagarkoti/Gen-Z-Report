@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:math' as math;
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'features/reader/presentation/pages/reader_screen.dart';
@@ -11,9 +12,11 @@ import 'core/di/service_locator.dart';
 import 'core/theme/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'features/reader/presentation/widgets/mini_audio_player.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   
   try {
     final prefs = await SharedPreferences.getInstance();
@@ -22,7 +25,7 @@ void main() async {
     if (kIsWeb) {
       await Firebase.initializeApp(
         options: const FirebaseOptions(
-          apiKey: 'AIzaSyBk-2EN4Fz46o-sRaOSFYZFVbkNSKPudVY',
+          apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
           appId: '1:503736301410:web:997c06969ddf09d1dd5e3b',
           messagingSenderId: '503736301410',
           projectId: 'gen-z-report',
@@ -69,9 +72,10 @@ class GenZReportApp extends StatelessWidget {
               outline: Color(0xFFE5E5EA),
             ),
             textTheme: GoogleFonts.muktaTextTheme().copyWith(
-              displayLarge: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-              bodyLarge: const TextStyle(color: Colors.black, height: 1.6),
-              bodyMedium: const TextStyle(color: Color(0xFF424245), height: 1.6),
+              displayLarge: TextStyle(color: Colors.black, fontWeight: FontWeight.w900),
+              headlineLarge: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              bodyLarge: TextStyle(color: Colors.black, height: 1.6),
+              bodyMedium: TextStyle(color: Color(0xFF424245), height: 1.6),
             ),
           ),
           darkTheme: ThemeData(
@@ -91,9 +95,10 @@ class GenZReportApp extends StatelessWidget {
               outline: Color(0xFF38383A),
             ),
             textTheme: GoogleFonts.muktaTextTheme(ThemeData.dark().textTheme).copyWith(
-              displayLarge: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              bodyLarge: const TextStyle(color: Colors.white, height: 1.6),
-              bodyMedium: const TextStyle(color: Color(0xFFAEAEB2), height: 1.6),
+              displayLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+              headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              bodyLarge: TextStyle(color: Colors.white, height: 1.6),
+              bodyMedium: TextStyle(color: Color(0xFFAEAEB2), height: 1.6),
             ),
           ),
           routerConfig: _router,
@@ -143,97 +148,249 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
     
     return Scaffold(
-      body: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'जियनजेड प्रतिवेदन २०८२',
-                  style: textTheme.displayLarge?.copyWith(
-                    letterSpacing: 0.5,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(height: 1, width: 40, color: colorScheme.primary),
-                const SizedBox(height: 48),
-                Text(
-                  'न्यूनतम अनुसन्धान पाठक',
-                  textAlign: TextAlign.center,
-                  style: textTheme.titleMedium?.copyWith(
-                    letterSpacing: 0.2,
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-                const SizedBox(height: 80),
-                _HomeAction(
-                  label: 'प्राक्कथन पढ्नुहोस्',
-                  onTap: () => context.push('/preface'),
-                ),
-                const SizedBox(height: 16),
-                _HomeAction(
-                  label: 'विषयसूची',
-                  onTap: () => context.push('/toc'),
-                ),
-                const SizedBox(height: 48),
-                OutlinedButton(
-                  onPressed: () => context.push('/reader'),
-                  style: OutlinedButton.styleFrom(
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                    side: BorderSide(color: colorScheme.primary.withOpacity(0.2), width: 0.5),
-                    padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
-                  ),
-                  child: Text(
-                    'अनुसन्धान प्रवेश गर्नुहोस्',
-                    style: textTheme.titleLarge?.copyWith(
-                      letterSpacing: 0.5,
-                      fontWeight: FontWeight.bold,
+      body: ValueListenableBuilder<ThemeMode>(
+        valueListenable: themeModeNotifier,
+        builder: (context, mode, _) {
+          final isDark = mode == ThemeMode.dark;
+          
+          return Stack(
+            children: [
+              // Premium Paper Background Texture
+              Positioned.fill(
+                child: Container(
+                  color: isDark ? const Color(0xFF121214) : const Color(0xFFF9F7F2), // Warm paper tone
+                  child: CustomPaint(
+                    painter: _PaperTexturePainter(
+                      isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const Positioned(
-            bottom: 32,
-            left: 0,
-            right: 0,
-            child: MiniAudioPlayer(),
-          ),
-        ],
+              ),
+              const Positioned(
+                bottom: 30,
+                left: 0,
+                right: 0,
+                child: MiniAudioPlayer(),
+              ),
+              SelectionArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(vertical: 60),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'जियनजेड प्रतिवेदन २०८२',
+                          style: theme.textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1,
+                            fontSize: 44,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        // More elegant divider
+                        Container(
+                          width: 120,
+                          height: 1.5,
+                          color: theme.colorScheme.primary.withOpacity(0.15),
+                        ),
+                        const SizedBox(height: 80),
+                        // Reordered & Refined Button Group
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 320),
+                          child: Column(
+                            children: [
+                              _HomeMenuButton(
+                                label: 'प्राक्कथन',
+                                description: 'Preface & Introduction',
+                                icon: Icons.history_edu_rounded,
+                                onPressed: () => context.push('/preface'),
+                              ),
+                              const SizedBox(height: 16),
+                              _HomeMenuButton(
+                                label: 'विषयसूची',
+                                description: 'Table of Contents',
+                                icon: Icons.format_list_bulleted_rounded,
+                                onPressed: () => context.push('/toc'),
+                              ),
+                              const SizedBox(height: 16),
+                              _HomeMenuButton(
+                                label: 'पूर्ण प्रतिवेदन',
+                                description: 'Read the full report',
+                                icon: Icons.menu_book_rounded,
+                                onPressed: () async {
+                            final prefs = await SharedPreferences.getInstance();
+                            final lastPage = prefs.getInt('last_read_page') ?? 1;
+                            if (context.mounted) {
+                              context.push('/reader?page=$lastPage');
+                            }
+                          },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 100),
+                        Text(
+                          'जेनजी आन्दोलन जाँचबुझ आयोगको प्रतिवेदन',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            height: 1.8,
+                            color: theme.colorScheme.onSurface.withOpacity(0.3),
+                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 40,
+                right: 20,
+                child: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                      size: 20,
+                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                  onPressed: () {
+                    themeModeNotifier.value = isDark ? ThemeMode.light : ThemeMode.dark;
+                  },
+                  tooltip: isDark ? 'Light Mode' : 'Dark Mode',
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class _HomeAction extends StatelessWidget {
+class _PaperTexturePainter extends CustomPainter {
+  final Color color;
+  _PaperTexturePainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0;
+
+    final random = math.Random(42);
+    // Draw subtle fibers/grain
+    for (var i = 0; i < 1500; i++) {
+      final x1 = random.nextDouble() * size.width;
+      final y1 = random.nextDouble() * size.height;
+      final length = random.nextDouble() * 3 + 1;
+      final angle = random.nextDouble() * 2 * math.pi;
+      
+      canvas.drawLine(
+        Offset(x1, y1),
+        Offset(x1 + math.cos(angle) * length, y1 + math.sin(angle) * length),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _HomeMenuButton extends StatelessWidget {
   final String label;
-  final VoidCallback onTap;
-  const _HomeAction({required this.label, required this.onTap});
+  final String description;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _HomeMenuButton({
+    required this.label,
+    required this.description,
+    required this.icon,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            letterSpacing: 0.2,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.08)),
+          color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 28, color: theme.colorScheme.primary.withOpacity(0.8)),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary.withOpacity(0.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, 
+              size: 14, 
+              color: theme.colorScheme.primary.withOpacity(0.2)),
+          ],
         ),
       ),
     );
   }
+}
+
+class _GridPainter extends CustomPainter {
+  final Color color;
+  _GridPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 0.5;
+
+    for (double i = 0; i < size.width; i += 40) {
+      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
+    }
+    for (double i = 0; i < size.height; i += 40) {
+      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
