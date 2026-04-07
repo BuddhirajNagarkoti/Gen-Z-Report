@@ -182,6 +182,14 @@ class HomePage extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Image.asset(
+                          'assets/logos/app_logo.jpg',
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: 32),
                         Text(
                           'जियनजेड प्रतिवेदन २०८२',
                           style: theme.textTheme.headlineLarge?.copyWith(
@@ -257,7 +265,7 @@ class HomePage extends StatelessWidget {
                   icon: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
+                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(

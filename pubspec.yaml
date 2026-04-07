@@ -42,6 +42,7 @@ flutter:
     - assets/data/
     - assets/data/sync/
     - assets/images/
+    - assets/logos/
     - .env
     - texts/
     - texts/texts np/

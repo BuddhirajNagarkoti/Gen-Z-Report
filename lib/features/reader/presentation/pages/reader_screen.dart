@@ -415,6 +415,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Image.asset(
+                  'assets/logos/app_logo.jpg',
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 12),
                 Text(
                   'जियनजेड प्रतिवेदन',
                   style: textTheme.titleSmall?.copyWith(letterSpacing: 1, fontWeight: FontWeight.bold),
@@ -424,7 +432,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   'अनुसन्धान प्रतिवेदन २०८२',
                   style: textTheme.labelSmall?.copyWith(
                     letterSpacing: 1.5,
-                    color: colorScheme.onSurface.withOpacity(0.4),
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ],
