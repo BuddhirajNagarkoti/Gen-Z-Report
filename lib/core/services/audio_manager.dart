@@ -27,7 +27,12 @@ class AudioManager extends ChangeNotifier {
     _init();
   }
 
+  bool _isFetchingAudioList = false;
+
   Future<void> _fetchAvailableAudioList() async {
+    if (_isFetchingAudioList) return;
+    _isFetchingAudioList = true;
+    
     try {
       final storageRef = FirebaseStorage.instance.ref().child('voices');
       final listResult = await storageRef.listAll();
@@ -47,6 +52,8 @@ class AudioManager extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('AudioManager: Failed to fetch audio list: $e');
+    } finally {
+      _isFetchingAudioList = false;
     }
   }
 
@@ -115,13 +122,19 @@ class AudioManager extends ChangeNotifier {
   double get playbackSpeed => _playbackSpeed;
 
   bool isAudioAvailable(int pageNum) {
-    if (_hasFetchedAudioList) {
-      return _availableAudioPages.contains(pageNum);
+    final available = _availableAudioPages.contains(pageNum);
+    
+    // If not available and we haven't checked in a while, trigger a refresh
+    if (!available && _hasFetchedAudioList) {
+      // Small debounce/throttle to avoid spamming Firebase
+      Future.delayed(const Duration(seconds: 1), () {
+        if (!_isFetchingAudioList) {
+          _fetchAvailableAudioList();
+        }
+      });
     }
-    // Fallback to hardcoded list while loading from network
-    if (pageNum >= 1 && pageNum <= 36) return true;
-    if (pageNum >= 648 && pageNum <= 711) return true;
-    return false;
+    
+    return available;
   }
 
   void setPlaybackSpeed(double speed) async {
