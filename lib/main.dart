@@ -24,7 +24,7 @@ void main() async {
     
     if (kIsWeb) {
       await Firebase.initializeApp(
-        options: const FirebaseOptions(
+        options: FirebaseOptions(
           apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
           appId: '1:503736301410:web:997c06969ddf09d1dd5e3b',
           messagingSenderId: '503736301410',

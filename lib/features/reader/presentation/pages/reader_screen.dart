@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../data/models/chapter.dart';
 import '../../../../data/repositories/page_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../data/datasources/toc_data.dart';
 import '../../../../core/theme/theme_provider.dart';
@@ -36,16 +38,45 @@ class _ReaderScreenState extends State<ReaderScreen> {
   int _currentPageIndex = 0;
   double _fontSize = 18.0;
   bool _isReady = false;
-
+  List<int> _bookmarks = [];
+  
   @override
   void initState() {
     super.initState();
     _currentPageIndex = widget.initialPage - 1;
     _pageController = PageController(initialPage: _currentPageIndex);
+    _loadLocalStorageState();
     _initData();
     
     // Sync reader with audio manager to follow the voice
     _audioManager.addListener(_syncWithAudio);
+  }
+
+  Future<void> _loadLocalStorageState() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      final savedBookmarks = prefs.getStringList('bookmarks') ?? [];
+      _bookmarks = savedBookmarks.map((e) => int.parse(e)).toList();
+    });
+  }
+
+  Future<void> _saveLastReadPage() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_read_page', _currentPageIndex + 1);
+  }
+
+  Future<void> _toggleBookmark() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      final pageNum = _currentPageIndex + 1;
+      if (_bookmarks.contains(pageNum)) {
+        _bookmarks.remove(pageNum);
+      } else {
+        _bookmarks.add(pageNum);
+        _bookmarks.sort();
+      }
+      prefs.setStringList('bookmarks', _bookmarks.map((e) => e.toString()).toList());
+    });
   }
 
   void _syncWithAudio() {
@@ -120,32 +151,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
         title: Text(
           'जियनजेड प्रतिवेदन',
-          style: theme.textTheme.titleSmall?.copyWith(letterSpacing: 2, fontWeight: FontWeight.normal),
+          style: theme.textTheme.titleSmall?.copyWith(letterSpacing: 0.5, fontWeight: FontWeight.normal),
         ),
         actions: [
-          const SizedBox.shrink(), 
           IconButton(
             icon: Icon(
-              _bookmarkService.isPageBookmarked(_currentPageIndex + 1)
-                  ? Icons.bookmark
-                  : Icons.bookmark_border_outlined,
-              size: 20,
-              color: _bookmarkService.isPageBookmarked(_currentPageIndex + 1)
+              _bookmarks.contains(_currentPageIndex + 1)
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
+              color: _bookmarks.contains(_currentPageIndex + 1)
                   ? theme.colorScheme.primary
                   : null,
             ),
-            onPressed: () {
-              setState(() {
-                if (_bookmarkService.isPageBookmarked(_currentPageIndex + 1)) {
-                  _bookmarkService.removeTextBookmark(_currentPageIndex + 1);
-                } else {
-                  _bookmarkService.addTextBookmark(_currentPageIndex + 1);
-                }
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('बुकमार्क अपडेट गरियो'), duration: Duration(seconds: 1)),
-              );
-            },
+            onPressed: _toggleBookmark,
+            tooltip: 'बुकमार्क थप्नुहोस्',
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, size: 20),
@@ -187,34 +206,37 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     }
                   }
                 },
-                child: GestureDetector(
-                  onHorizontalDragEnd: (details) {
-                    if (_audioManager.isPlaying) {
-                      _showAudioWarning();
-                    }
-                  },
-                  child: PageView.builder(
-                    controller: _pageController,
-                    physics: _audioManager.isPlaying 
-                        ? const NeverScrollableScrollPhysics() 
-                        : const BouncingScrollPhysics(),
-                    itemCount: _repo.totalPages,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentPageIndex = index;
-                      });
-                      _innerScrollController.jumpTo(0);
-                      _loadSyncDataForCurrentPage();
+                child: SelectionArea(
+                  child: GestureDetector(
+                    onHorizontalDragEnd: (details) {
+                      if (_audioManager.isPlaying) {
+                        _showAudioWarning();
+                      }
                     },
-                    itemBuilder: (context, index) {
-                      return _buildPage(context, index + 1);
-                    },
+                    child: PageView.builder(
+                      controller: _pageController,
+                      physics: _audioManager.isPlaying 
+                          ? const NeverScrollableScrollPhysics() 
+                          : const BouncingScrollPhysics(),
+                      itemCount: _repo.totalPages,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentPageIndex = index;
+                        });
+                        _innerScrollController.jumpTo(0);
+                        _loadSyncDataForCurrentPage();
+                        _saveLastReadPage();
+                      },
+                      itemBuilder: (context, index) {
+                        return _buildPage(context, index + 1);
+                      },
+                    ),
                   ),
                 ),
               ),
-              _buildNavigationOverlay(context),
+              _buildStickyHeader(context),
               Positioned(
-                bottom: 80, // Above navigation overlay if visible
+                bottom: 80, 
                 left: 0,
                 right: 0,
                 child: const MiniAudioPlayer(),
@@ -233,103 +255,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
       color: theme.scaffoldBackgroundColor,
       child: SingleChildScrollView(
         controller: pageNum == _currentPageIndex + 1 ? _innerScrollController : null,
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 40.0),
+        padding: const EdgeInsets.fromLTRB(16.0, 70.0, 16.0, 40.0), // Top padding for sticky header
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 800),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'जियनजेड अनुसन्धान प्रतिवेदन २०८२', 
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.3),
-                    fontSize: 10,
-                  ),
-                ),
-                ListenableBuilder(
-                  listenable: _audioManager,
-                  builder: (context, _) {
-                    final bool isSamePage = _audioManager.currentPage == pageNum;
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_audioManager.isLoading && isSamePage)
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey),
-                          )
-                        else
-                          IconButton(
-                            icon: Icon(
-                              _audioManager.isPlaying && isSamePage 
-                                ? Icons.pause_circle_outline 
-                                : Icons.play_circle_outline, 
-                              size: 20
-                            ),
-                            onPressed: () {
-                              if (_audioManager.isPlaying && isSamePage) {
-                                _audioManager.pause();
-                              } else {
-                                _playAudio(pageNum);
-                              }
-                            },
-                            tooltip: 'वाचन सुन्नुहोस्',
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _audioManager.isPlaying && isSamePage ? 'सुन्दै हुनुहुन्छ...' : 'पृष्ठ ${pageNum}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.4),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                ),
-
-              ],
-            ),
-            const SizedBox(height: 12),
-            Divider(color: theme.colorScheme.outline.withOpacity(0.05)),
-            if (pageNum == 11) ...[
+                const SizedBox(height: 12),
+            if ([11, 12, 13, 487, 488, 597, 598, 599, 600, 601, 602, 603, 604, 605, 606].contains(pageNum)) ...[
               const SizedBox(height: 16),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.asset(
-                  'assets/images/Page-11.jpg',
+                  'assets/images/Page-$pageNum.jpg',
                   width: double.infinity,
                   fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (pageNum == 12) ...[
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  'assets/images/Page-12.jpg',
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (pageNum == 13) ...[
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  'assets/images/page-13.jpg',
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -349,60 +291,112 @@ class _ReaderScreenState extends State<ReaderScreen> {
 }
 
   List<Widget> _buildCitableContent(BuildContext context, String content) {
-    // This is now replaced by CitableTextView
     return [];
   }
 
-  Widget _buildNavigationOverlay(BuildContext context) {
+  Widget _buildStickyHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final pageNum = _currentPageIndex + 1;
+    
     return Positioned(
-      bottom: 24,
+      top: 0,
       left: 0,
       right: 0,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => _showJumpToPageDialog(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '${_currentPageIndex + 1} / ${_repo.totalPages}',
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1),
-                              ),
-                              const SizedBox(width: 6),
-                              Icon(
-                                Icons.edit_outlined,
-                                size: 11,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-            ),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor.withOpacity(0.9),
+          border: Border(
+            bottom: BorderSide(color: theme.colorScheme.outline.withOpacity(0.05)),
           ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Page Jumper (Top Left)
+            GestureDetector(
+              onTap: () => _showJumpToPageDialog(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1C1C1E).withValues(alpha: 0.95) : Colors.white.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.menu_book_rounded,
+                      size: 12,
+                      color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$pageNum / ${_repo.totalPages}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Audio Controls (Top Right)
+            ListenableBuilder(
+              listenable: _audioManager,
+              builder: (context, _) {
+                final bool isSamePage = _audioManager.currentPage == pageNum;
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_audioManager.isLoading && isSamePage)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey),
+                      )
+                    else
+                      IconButton(
+                        icon: Icon(
+                          _audioManager.isPlaying && isSamePage 
+                            ? Icons.pause_circle_outline 
+                            : Icons.play_circle_outline, 
+                          size: 20,
+                          color: _audioManager.isAudioAvailable(pageNum) ? null : theme.colorScheme.onSurface.withOpacity(0.15),
+                        ),
+                        onPressed: _audioManager.isAudioAvailable(pageNum) 
+                          ? () {
+                            if (_audioManager.isPlaying && isSamePage) {
+                              _audioManager.pause();
+                            } else {
+                              _playAudio(pageNum);
+                            }
+                          }
+                          : null,
+                        tooltip: _audioManager.isAudioAvailable(pageNum) ? 'वाचन सुन्नुहोस्' : 'यो पृष्ठको लागि अडियो उपलब्ध छैन',
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _audioManager.isPlaying && isSamePage ? 'सुन्दै हुनुहुन्छ...' : 'पृष्ठ $pageNum',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                );
+              }
+            ),
+          ],
         ),
       ),
     );
@@ -423,7 +417,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               children: [
                 Text(
                   'जियनजेड प्रतिवेदन',
-                  style: textTheme.titleSmall?.copyWith(letterSpacing: 4, fontWeight: FontWeight.bold),
+                  style: textTheme.titleSmall?.copyWith(letterSpacing: 1, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -462,6 +456,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
               );
             },
           ),
+          if (_bookmarks.isNotEmpty) ...[
+            const Divider(height: 32, indent: 24, endIndent: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Text(
+                'बुकमार्क गरिएका पृष्ठहरू',
+                style: textTheme.labelSmall?.copyWith(
+                  letterSpacing: 2, 
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ..._bookmarks.map((pageNum) => ListTile(
+              leading: const Icon(Icons.bookmark_rounded, size: 18),
+              title: Text('पृष्ठ $pageNum'),
+              dense: true,
+              onTap: () {
+                _pageController.jumpToPage(pageNum - 1);
+                setState(() => _currentPageIndex = pageNum - 1);
+                Navigator.pop(context);
+              },
+            )),
+          ],
           const Divider(height: 32, indent: 24, endIndent: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -518,11 +536,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // This ensures the modal updates instantly when the switch is toggled
           final theme = isDark 
             ? ThemeData.dark().copyWith(
-                textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Inter'),
+                textTheme: GoogleFonts.muktaTextTheme(ThemeData.dark().textTheme),
                 colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark)
               ) 
             : ThemeData.light().copyWith(
-                textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Inter'),
+                textTheme: GoogleFonts.muktaTextTheme(ThemeData.light().textTheme),
                 colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light)
               );
               

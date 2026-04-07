@@ -102,19 +102,10 @@ class _TOCScreenState extends State<TOCScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('विषयसूची'),
-        elevation: 0,
-        actions: const [
-          SizedBox.shrink(),
-        ],
-      ),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Stack(
@@ -141,72 +132,139 @@ class _TOCScreenState extends State<TOCScreen> {
                       if (_innerScrollController.hasClients) _innerScrollController.jumpTo(0);
                     },
                     itemBuilder: (context, pageIdx) {
-                      return ListView.builder(
-                        controller: pageIdx == _currentPage ? _innerScrollController : null,
-                        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                        physics: const AlwaysScrollableScrollPhysics(), 
-                        itemCount: _tocPages[pageIdx].length,
-                        itemBuilder: (context, index) {
-                          final line = _tocPages[pageIdx][index];
-                          final pageNum = _parsePageNumber(line);
-                          final title = _extractTitle(line);
-                          final bool isRoot = line.startsWith('भाग') || line.startsWith('परिच्छेद');
-                          final bool isSub = line.startsWith('  ');
+                      return Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 800),
+                          child: ListView.builder(
+                            controller: pageIdx == _currentPage ? _innerScrollController : null,
+                            padding: const EdgeInsets.fromLTRB(16.0, 80.0, 16.0, 120.0), // Padding for sticky header and page jumper
+                            physics: const AlwaysScrollableScrollPhysics(), 
+                            itemCount: _tocPages[pageIdx].length,
+                            itemBuilder: (context, index) {
+                              final line = _tocPages[pageIdx][index];
+                              final pageNum = _parsePageNumber(line);
+                              final title = _extractTitle(line);
+                              final bool isRoot = line.startsWith('भाग') || line.startsWith('परिच्छेद');
+                              final bool isSub = line.startsWith('  ');
 
-                          return ListTile(
-                            contentPadding: EdgeInsets.only(
-                              left: isRoot ? 16 : (isSub ? 40 : 28),
-                              right: 16,
-                            ),
-                            dense: !isRoot,
-                            title: Text(
-                              title,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: isRoot ? FontWeight.bold : FontWeight.normal,
-                                fontSize: isRoot ? 16 : 14,
-                                color: isRoot ? null : theme.colorScheme.onSurface.withOpacity(0.8),
-                              ),
-                            ),
-                            trailing: pageNum != null
-                                ? Text(
-                                    'पृष्ठ $pageNum',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: theme.colorScheme.primary.withOpacity(0.6),
-                                      letterSpacing: 1,
-                                    ),
-                                  )
-                                : null,
-                            onTap: pageNum != null
-                                ? () {
-                                    widget.onChapterSelected(pageNum);
-                                    Navigator.pop(context);
-                                  }
-                                : null,
-                          );
-                        },
+                              return ListTile(
+                                contentPadding: EdgeInsets.only(
+                                  left: isRoot ? 16 : (isSub ? 40 : 28),
+                                  right: 16,
+                                ),
+                                dense: !isRoot,
+                                title: Text(
+                                  title,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: isRoot ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: isRoot ? 16 : 14,
+                                    color: isRoot ? null : theme.colorScheme.onSurface.withOpacity(0.8),
+                                  ),
+                                ),
+                                trailing: pageNum != null
+                                    ? Text(
+                                        'पृष्ठ $pageNum',
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          color: theme.colorScheme.primary.withOpacity(0.6),
+                                          letterSpacing: 1,
+                                        ),
+                                      )
+                                    : null,
+                                onTap: pageNum != null
+                                    ? () {
+                                        Navigator.pop(context);
+                                        widget.onChapterSelected(pageNum);
+                                      }
+                                    : null,
+                              );
+                            },
+                          ),
+                        ),
                       );
                     },
                   ),
                 ),
+                
+                // Floating Header (Matches ReaderScreen)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    decoration: BoxDecoration(
+                      color: theme.scaffoldBackgroundColor.withOpacity(0.9),
+                      border: Border(
+                        bottom: BorderSide(color: theme.colorScheme.outline.withOpacity(0.05)),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                          onPressed: () => Navigator.pop(context),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        Text(
+                          'विषयसूची',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            letterSpacing: 0.5, 
+                            fontWeight: FontWeight.normal
+                          ),
+                        ),
+                        const SizedBox(width: 48), // Spacer to balance the layout
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Page Jumper (Bottom Center - Unified Style)
                 Positioned(
                   bottom: 24,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface.withOpacity(0.9),
+                        color: isDark ? const Color(0xFF1C1C1E).withOpacity(0.95) : Colors.white.withOpacity(0.95),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
+                        border: Border.all(
+                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        'विषयसूची पाना ${_currentPage + 1} / ${_tocPages.length}',
-                        style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.list_rounded,
+                            size: 12,
+                            color: theme.colorScheme.primary.withOpacity(0.7),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'विषयसूची पाना ${_currentPage + 1} / ${_tocPages.length}',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
+
                 const Positioned(
                   bottom: 70, // Above pagination bar
                   left: 0,

@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'sync_data_service.dart';
 import 'audio_download_service.dart';
-import 'dart:io';
 
 class AudioManager extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
@@ -21,11 +20,38 @@ class AudioManager extends ChangeNotifier {
   bool _isPrefetching = false;
   double _playbackSpeed = 1.0;
   
+  bool _hasFetchedAudioList = false;
+  Set<int> _availableAudioPages = {};
+  
   AudioManager() {
     _init();
   }
 
+  Future<void> _fetchAvailableAudioList() async {
+    try {
+      final storageRef = FirebaseStorage.instance.ref().child('voices');
+      final listResult = await storageRef.listAll();
+      final Set<int> available = {};
+      for (var item in listResult.items) {
+        final name = item.name;
+        if (name.startsWith('pg_') && name.endsWith('.mp3')) {
+          final numStr = name.substring(3, name.length - 4);
+          final num = int.tryParse(numStr);
+          if (num != null) {
+            available.add(num);
+          }
+        }
+      }
+      _availableAudioPages = available;
+      _hasFetchedAudioList = true;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('AudioManager: Failed to fetch audio list: $e');
+    }
+  }
+
   void _init() {
+    _fetchAvailableAudioList();
     _player.onPositionChanged.listen((p) {
       _position = p;
       notifyListeners();
@@ -84,8 +110,19 @@ class AudioManager extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get statusMessage => _statusMessage;
   double get downloadProgress => _downloadProgress;
+  bool get isPrefetching => _isPrefetching;
   bool get isActive => _isPlaying || _position > Duration.zero;
   double get playbackSpeed => _playbackSpeed;
+
+  bool isAudioAvailable(int pageNum) {
+    if (_hasFetchedAudioList) {
+      return _availableAudioPages.contains(pageNum);
+    }
+    // Fallback to hardcoded list while loading from network
+    if (pageNum >= 1 && pageNum <= 36) return true;
+    if (pageNum >= 648 && pageNum <= 711) return true;
+    return false;
+  }
 
   void setPlaybackSpeed(double speed) async {
     _playbackSpeed = speed;
@@ -106,6 +143,14 @@ class AudioManager extends ChangeNotifier {
     if (_currentPage == pageNum && _isPlaying) return;
     
     _currentPage = pageNum;
+    
+    if (!isAudioAvailable(pageNum)) {
+      await stop();
+      _statusMessage = 'यो पृष्ठको लागि अडियो उपलब्ध छैन';
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     _position = Duration.zero;
     _duration = Duration.zero;
@@ -213,13 +258,13 @@ class AudioManager extends ChangeNotifier {
   void _prefetchNextPage() async {
     if (_isPrefetching || _currentPage >= 898 || kIsWeb) return;
     
-    final nextLocalPath = await _downloadService.getLocalPath(_currentPage + 1);
-    final file = File(nextLocalPath);
-    if (!await file.exists()) {
+    final nextPageNum = _currentPage + 1;
+    final isDownloaded = await _downloadService.isDownloaded(nextPageNum);
+    if (!isDownloaded) {
       _isPrefetching = true;
       try {
-        debugPrint('AudioManager: Pre-fetching Page ${_currentPage + 1}');
-        await _downloadService.downloadPage(_currentPage + 1);
+        debugPrint('AudioManager: Pre-fetching Page $nextPageNum');
+        await _downloadService.downloadPage(nextPageNum);
       } catch (e) {
         debugPrint('AudioManager: Pre-fetch failed: $e');
       } finally {

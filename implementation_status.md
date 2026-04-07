@@ -23,10 +23,15 @@ The application has been successfully migrated to a unified **Flutter (Web + Mob
 - [x] Switched to `flutter_tts` for zero-cost, high-fidelity native Nepali speech.
 - [x] Integrated playback controls into the reader overlay.
 
+## 🟢 Phase 5: UI/UX Unification & Final Polish (Complete)
+- [x] **Unified Design System**: Applied consistent floating headers and centered (maxWidth: 800) layouts to Preface, TOC, and Reader.
+- [x] **Audio Availability System**: Added logic to grey out and disable audio buttons on pages where speech data is not yet available (preventing incorrect playback).
+- [x] **Global Dark Mode**: Integrated a high-fidelity dark/light mode toggle on the Home Screen for instant accessibility.
+- [x] **Table Optimization**: Manually formatted and refined complex summary and casualty tables (Pages 22, 26) into professional, responsive data grids.
+
 ## 🚀 Next Steps
 1.  **Deployment**: Compile for Flutter Web and Android.
-2.  **UX Polish**: Add more micro-animations to the reader.
-3.  **Offline Indexing**: Pre-bake the full JSON index of all 907 pages to avoid startup parsing.
+2.  **Startup Optimization**: Pre-bake the full JSON index of all 907 pages to avoid startup parsing.
 
 > [!TIP]
 > The app is now fully functional in terms of navigation and structure. To run, use `flutter run -d chrome` for web or select a mobile emulator.

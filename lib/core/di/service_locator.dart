@@ -15,7 +15,7 @@ Future<void> setupDependencyInjection(SharedPreferences prefs) async {
   getIt.registerLazySingleton<BookmarkService>(() => BookmarkService(prefs));
   getIt.registerLazySingleton<LanguageService>(() => LanguageService());
   getIt.registerLazySingleton<SyncDataService>(() => SyncDataService());
-  getIt.registerLazySingleton<AudioDownloadService>(() => AudioDownloadService());
+  getIt.registerLazySingleton<AudioDownloadService>(() => getAudioService());
   
   final pageRepo = PageRepository();
   getIt.registerLazySingleton<PageRepository>(() => pageRepo);
