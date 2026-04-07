@@ -182,32 +182,56 @@ class HomePage extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(
-                          'assets/logos/app_logo.jpg',
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                        Container(
+                          width: 120,
+                          height: 120,
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/logos/app_logo.jpg',
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 48),
                         Text(
-                          'जियनजेड प्रतिवेदन २०८२',
+                          'जियनजेड प्रतिवेदन',
                           style: theme.textTheme.headlineLarge?.copyWith(
                             fontWeight: FontWeight.w900,
-                            letterSpacing: -1,
-                            fontSize: 44,
+                            letterSpacing: -0.5,
+                            fontSize: 38,
                             color: theme.colorScheme.onSurface,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 24),
-                        // More elegant divider
-                        Container(
-                          width: 120,
-                          height: 1.5,
-                          color: theme.colorScheme.primary.withOpacity(0.15),
+                        Text(
+                          '२०८२',
+                          style: theme.textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                            fontSize: 34,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 80),
+                        const SizedBox(height: 60),
                         // Reordered & Refined Button Group
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 320),
