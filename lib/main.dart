@@ -57,6 +57,10 @@ class GenZReportApp extends StatelessWidget {
           themeMode: mode,
           theme: ThemeData(
             useMaterial3: true,
+            scrollbarTheme: ScrollbarThemeData(
+              thumbVisibility: WidgetStateProperty.all(false),
+              trackVisibility: WidgetStateProperty.all(false),
+            ),
             brightness: Brightness.light,
             scaffoldBackgroundColor: const Color(0xFFFFFFFF),
             appBarTheme: const AppBarTheme(
@@ -80,6 +84,10 @@ class GenZReportApp extends StatelessWidget {
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
+            scrollbarTheme: ScrollbarThemeData(
+              thumbVisibility: WidgetStateProperty.all(false),
+              trackVisibility: WidgetStateProperty.all(false),
+            ),
             brightness: Brightness.dark,
             scaffoldBackgroundColor: const Color(0xFF000000),
             appBarTheme: const AppBarTheme(
@@ -176,10 +184,12 @@ class HomePage extends StatelessWidget {
                 child: MiniAudioPlayer(),
               ),
               SelectionArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(vertical: 60),
-                    child: Column(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 120, 24, 60),
+                      child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
@@ -210,13 +220,13 @@ class HomePage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 48),
+                        const SizedBox(height: 52),
                         Text(
                           'जियनजेड प्रतिवेदन',
                           style: theme.textTheme.headlineLarge?.copyWith(
                             fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                            fontSize: 38,
+                            letterSpacing: 0,
+                            fontSize: 44,
                             color: theme.colorScheme.onSurface,
                           ),
                           textAlign: TextAlign.center,
@@ -225,8 +235,8 @@ class HomePage extends StatelessWidget {
                           '२०८२',
                           style: theme.textTheme.headlineLarge?.copyWith(
                             fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                            fontSize: 34,
+                            letterSpacing: 1,
+                            fontSize: 38,
                             color: theme.colorScheme.onSurface,
                           ),
                           textAlign: TextAlign.center,
@@ -282,6 +292,7 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
               Positioned(
                 top: 40,
                 right: 20,

@@ -22,6 +22,7 @@ class AudioManager extends ChangeNotifier {
   
   bool _hasFetchedAudioList = false;
   Set<int> _availableAudioPages = {};
+  Map<int, String> _availableAudioNames = {};
   
   AudioManager() {
     _init();
@@ -36,18 +37,20 @@ class AudioManager extends ChangeNotifier {
     try {
       final storageRef = FirebaseStorage.instance.ref().child('voices');
       final listResult = await storageRef.listAll();
-      final Set<int> available = {};
+      final Map<int, String> availableWithNames = {};
       for (var item in listResult.items) {
-        final name = item.name;
-        if (name.startsWith('pg_') && name.endsWith('.mp3')) {
-          final numStr = name.substring(3, name.length - 4);
+        final originalName = item.name;
+        final nameLower = originalName.toLowerCase();
+        if (nameLower.startsWith('pg_') && nameLower.endsWith('.mp3')) {
+          final numStr = nameLower.substring(3, nameLower.indexOf('.mp3'));
           final num = int.tryParse(numStr);
           if (num != null) {
-            available.add(num);
+            availableWithNames[num] = originalName;
           }
         }
       }
-      _availableAudioPages = available;
+      _availableAudioNames = availableWithNames;
+      _availableAudioPages = availableWithNames.keys.toSet();
       _hasFetchedAudioList = true;
       notifyListeners();
     } catch (e) {
@@ -92,22 +95,30 @@ class AudioManager extends ChangeNotifier {
   }
 
   void _playNextPage() async {
-    int nextPg = _currentPage;
-    if (_currentPage < 35) {
-      nextPg = _currentPage + 1;
-    } else if (_currentPage == 35) {
-      nextPg = 648;
-    } else if (_currentPage >= 648 && _currentPage < 711) {
-      nextPg = _currentPage + 1;
+    int nextPg = _currentPage + 1;
+    
+    // Look for the next available audio page
+    bool found = false;
+    final int maxSearchDepth = 10; // Try next 10 pages
+    for (int i = 0; i < maxSearchDepth; i++) {
+      if (_availableAudioPages.contains(nextPg)) {
+        found = true;
+        break;
+      }
+      nextPg++;
+    }
+
+    if (found) {
+      debugPrint('AudioManager: Auto-playing next available page $nextPg');
+      await playPage(nextPg);
     } else {
-      // END OF PLAYLIST
+      // END OF PLAYLIST or no audio found nearby
       _isPlaying = false;
       _position = Duration.zero;
       _duration = Duration.zero;
+      _statusMessage = 'अडियो प्लेलिस्ट समाप्त भयो';
       notifyListeners();
-      return;
     }
-    await playPage(nextPg);
   }
 
   bool get isPlaying => _isPlaying;
@@ -175,13 +186,14 @@ class AudioManager extends ChangeNotifier {
       notifyListeners();
       await _player.stop();
 
-      // On Web, we stream directly from URL because path_provider/local files aren't supported
+      // Use the actual case-sensitive filename found during initial scan
+      final actualFileName = _availableAudioNames[pageNum] ?? 'pg_${pageNum.toString().padLeft(3, '0')}.mp3';
+      final storageRef = FirebaseStorage.instance.ref().child('voices/$actualFileName');
+      final url = await storageRef.getDownloadURL();
+      
       if (kIsWeb) {
         _statusMessage = 'क्लाउडबाट फेच गर्दैछ (Web)...';
         notifyListeners();
-        final fileName = 'pg_${pageNum.toString().padLeft(3, '0')}.mp3';
-        final storageRef = FirebaseStorage.instance.ref().child('voices/$fileName');
-        final url = await storageRef.getDownloadURL();
         await _player.setSource(UrlSource(url));
         debugPrint('AudioManager: Streaming from Firebase for Page $pageNum (Web)');
       } else {
@@ -198,9 +210,6 @@ class AudioManager extends ChangeNotifier {
         } else {
           _statusMessage = 'क्लाउडबाट फेच गर्दैछ...';
           notifyListeners();
-          final fileName = 'pg_${pageNum.toString().padLeft(3, '0')}.mp3';
-          final storageRef = FirebaseStorage.instance.ref().child('voices/$fileName');
-          final url = await storageRef.getDownloadURL();
           _statusMessage = 'फेच गरियो, बफर गर्दैछ...';
           notifyListeners();
           await _player.setSource(UrlSource(url));

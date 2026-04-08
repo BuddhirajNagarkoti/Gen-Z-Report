@@ -6,26 +6,52 @@ class PageRepository {
   final Map<int, List<String>> _enCache = {};
   bool _isInitialized = false;
 
-  Future<void> initialize() async {
+  static const List<String> _allFiles = [
+    '1-4.txt', '5-16.txt', '17-99.txt', '100-103.txt', '104-131.txt',
+    '132-181.txt', '182-231.txt', '232-298.txt', '299-350.txt', '351-400.txt',
+    '401-450.txt', '451-500.txt', '501-550.txt', '551-600.txt', '601-650.txt',
+    '651-661.txt', '662-711.txt', '712-750.txt', '751-800.txt', '800-850.txt',
+    '850-898.txt',
+  ];
+  
+  final Set<String> _loadedFiles = {};
+
+  Future<void> initialize({int? initialPage}) async {
     if (_isInitialized) return;
+    
     try {
-      await _indexDirectory('texts/texts np', _npCache);
+      // 1. Determine priority files (Current page + First few pages for instant engagement)
+      final Set<String> priority = {'1-4.txt', '5-16.txt'};
+      if (initialPage != null) {
+        priority.add(getPageFile(initialPage));
+      }
+
+      // 2. Load priority files immediately to "unblock" the UI
+      for (final file in priority) {
+        if (!_loadedFiles.contains(file)) {
+          await _parseRawText('texts/texts np/$file', _npCache);
+          _loadedFiles.add(file);
+        }
+      }
+      
       _isInitialized = true;
+      
+      // 3. Load everything else in the background without awaiting
+      _loadRemaining();
     } catch (e) {
-      // ignore in production
+      // ignore
+      _isInitialized = true;
     }
   }
 
-  Future<void> _indexDirectory(String dirPath, Map<int, List<String>> cache) async {
-    final List<String> files = [
-      '1-4.txt', '5-16.txt', '17-99.txt', '100-103.txt', '104-131.txt',
-      '132-181.txt', '182-231.txt', '232-298.txt', '299-350.txt', '351-400.txt',
-      '401-450.txt', '451-500.txt', '501-550.txt', '551-600.txt', '601-650.txt',
-      '651-661.txt', '662-711.txt', '712-750.txt', '751-800.txt', '800-850.txt',
-      '850-898.txt',
-    ];
-    for (var file in files) {
-      await _parseRawText('$dirPath/$file', cache);
+  void _loadRemaining() async {
+    for (final file in _allFiles) {
+      if (!_loadedFiles.contains(file)) {
+        // Use a small delay between files if needed to keep UI smooth, 
+        // though microtasks are usually fine.
+        await _parseRawText('texts/texts np/$file', _npCache);
+        _loadedFiles.add(file);
+      }
     }
   }
 

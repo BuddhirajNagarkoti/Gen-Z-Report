@@ -80,11 +80,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _syncWithAudio() {
-    if (_audioManager.isPlaying && mounted) {
+    if (mounted) {
       final audioPage = _audioManager.currentPage;
       final audioPageIndex = audioPage - 1;
       
-      if (_currentPageIndex != audioPageIndex) {
+      // Sync reader if audio is playing OR currently loading a new page
+      // This ensures the reader moves to the next page as soon as _playNextPage triggers,
+      // providing better UX before the audio actually starts.
+      if ((_audioManager.isPlaying || _audioManager.isLoading) && _currentPageIndex != audioPageIndex) {
         _pageController.animateToPage(
           audioPageIndex,
           duration: const Duration(milliseconds: 500),
@@ -95,7 +98,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Future<void> _initData() async {
-    await _repo.initialize();
+    await _repo.initialize(initialPage: _currentPageIndex + 1);
     _loadSyncDataForCurrentPage();
     if (mounted) {
       setState(() => _isReady = true);
